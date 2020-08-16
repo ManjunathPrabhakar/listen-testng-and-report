@@ -8,6 +8,11 @@
 
 *
 
+Current TestNG Version 7.3.0
+issues: need to use in vmarguments *-Dtestng.dtd.http=true*
+If Version 7.1.0 used
+issues : *IAnnotationTransformer*->*transform* method called multiple times
+
 **USES SERVICE LOADER**
 
 Folder Structure :
