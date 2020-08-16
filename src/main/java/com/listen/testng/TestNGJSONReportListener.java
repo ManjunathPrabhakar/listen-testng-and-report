@@ -1,12 +1,16 @@
 package com.listen.testng;
 
 import org.testng.*;
+import org.testng.annotations.*;
 import org.testng.xml.XmlSuite;
 
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -17,7 +21,7 @@ import java.util.concurrent.TimeUnit;
  * @created 16/08/2020
  * @project testng-listeners-workshop
  */
-public class TestNGJSONReportListener implements ITestListener, IReporter, ISuiteListener {
+public class TestNGJSONReportListener implements ITestListener, IReporter, ISuiteListener, IAnnotationTransformer {
 
     String pathToSaveJsonReport = "testNG-reports\\";
 
@@ -36,7 +40,16 @@ public class TestNGJSONReportListener implements ITestListener, IReporter, ISuit
     @Override
     public void onStart(ISuite suite) {
         suiteName = suite.getName();
+        String userIP = "NA";
+        try {
+            userIP = InetAddress.getLocalHost().getHostAddress();
+        } catch (UnknownHostException ignored) {
+        }
         String val = "{" +
+                "\"userName\":\"" + DataInjection.userName + "\"," +
+                "\"osName\":\"" + DataInjection.osName + "\"," +
+                "\"osVersion\":\"" + DataInjection.osVersion + "\"," +
+                "\"userSystemIP\":\"" + userIP + "\"," +
                 "\"suiteName\":\"" + suite.getName() + "\"," +
                 "\"suiteDetails\":[";
 
@@ -144,6 +157,11 @@ public class TestNGJSONReportListener implements ITestListener, IReporter, ISuit
                 "\"totalTime\":\"" + getTimeDiff(endMills, startmills) + "\"," +
                 "\"skipReason\":\"" + result.getThrowable() + "\"}";
         stringBuilder.append(val);
+    }
+
+    @Override
+    public void onTestFailedButWithinSuccessPercentage(ITestResult iTestResult) {
+
     }
 
 
@@ -254,9 +272,11 @@ public class TestNGJSONReportListener implements ITestListener, IReporter, ISuit
         //JSONObject obj = new JSONObject();
         //obj.put("testSuite",stringBuilder.toString());
 
+
         try {
-            Files.write(Paths.get(pathToSaveJsonReport + suiteName.replaceAll(" ", "") + "_" + startmills + ".json"), stringBuilder.toString().getBytes(), StandardOpenOption.CREATE_NEW);
-        } catch (IOException e) {
+            // Files.write(Paths.get(pathToSaveJsonReport + suiteName.replaceAll(" ", "") + "_" + startmills + ".json"), stringBuilder.toString().getBytes(), StandardOpenOption.CREATE_NEW);
+            writeAndCreateFile(stringBuilder.toString(), pathToSaveJsonReport + suiteName.replaceAll(" ", "") + "_" + startmills + ".json");
+        } catch (Exception e) {
             //exception handling left as an exercise for the reader
         }
     }
@@ -299,5 +319,27 @@ public class TestNGJSONReportListener implements ITestListener, IReporter, ISuit
         return (hrs + ":" + min + ":" + sec);
     }
 
+    public static void writeAndCreateFile(String filecontent, String filePathToSave) {
+        try {
+            File file = new File(filePathToSave);
+            file.getParentFile().mkdirs();
+            FileWriter fw = new FileWriter(filePathToSave);
+            fw.write(filecontent);
+            fw.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
+
+
+    ///////////////////////////
+
+    @Override
+    public void transform(ITestAnnotation annotation, Class testClass,Constructor testConstructor, Method testMethod){
+        System.out.println(annotation.getTestName());
+    }
+
+
+    ///////////////////
 }
